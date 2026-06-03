@@ -60,7 +60,7 @@
 
 {{-- En-tête --}}
 <div class="header">
-    <h1>🏫 Suivi Scolaire — Cycle Primaire</h1>
+    <h1>🏫 SchoolFlow — Cycle Primaire</h1>
     <h2>BULLETIN DE NOTES</h2>
     <p>Année scolaire 2025–2026 &nbsp;|&nbsp; {{ ucfirst(str_replace('_', ' ', $trimestre)) }}</p>
 </div>

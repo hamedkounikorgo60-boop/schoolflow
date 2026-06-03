@@ -74,3 +74,11 @@ Route::middleware(['auth', 'role:enseignant'])
 
         Route::resource('matieres', MatiereController::class);
     });
+
+use App\Http\Controllers\BulletinController;
+
+Route::middleware(['auth'])
+    ->get('/bulletin/{eleve}/{trimestre}',
+        [BulletinController::class, 'show'])
+    ->name('bulletin.show');
+
