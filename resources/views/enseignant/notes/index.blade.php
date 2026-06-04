@@ -11,7 +11,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="fw-semibold mb-0">Notes & Moyennes</h5>
     <a href="{{ route('enseignant.notes.create') }}" class="btn btn-primary btn-sm">
-        + Saisir une note
+        + Saisie groupée
     </a>
 </div>
 

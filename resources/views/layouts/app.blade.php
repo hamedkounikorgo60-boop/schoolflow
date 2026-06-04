@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Suivi Scolaire')</title>
+    <title>@yield('title', 'SchoolFlow')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -293,6 +293,14 @@
     <a href="{{ route('gestionnaire.classes.index') }}"
        class="sidebar-link {{ request()->routeIs('gestionnaire.classes.*') ? 'active' : '' }}">
         <i class="bi bi-building"></i> Classes
+    </a>
+    <a href="{{ route('gestionnaire.enseignants.index') }}"
+       class="sidebar-link {{ request()->routeIs('gestionnaire.enseignants.*') ? 'active' : '' }}">
+        <i class="bi bi-person-workspace"></i> Enseignants
+    </a>
+    <a href="{{ route('gestionnaire.matieres.index') }}"
+       class="sidebar-link {{ request()->routeIs('gestionnaire.matieres.*') ? 'active' : '' }}">
+        <i class="bi bi-book"></i> Matières
     </a>
 
     <div class="sidebar-section">Finances</div>

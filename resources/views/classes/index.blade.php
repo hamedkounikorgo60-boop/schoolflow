@@ -23,6 +23,7 @@
                     <th>Niveau</th>
                     <th>Frais</th>
                     <th>Élèves</th>
+                    <th>Enseignants</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -43,11 +44,21 @@
                         <div><strong>Transport :</strong> {{ number_format($classe->frais_transport,0,',',' ') }} FCFA</div>
                         <div><strong>Fournitures :</strong> {{ number_format($classe->frais_fournitures,0,',',' ') }} FCFA</div>
                         <div><strong>Autres :</strong> {{ number_format($classe->autres_frais,0,',',' ') }} FCFA</div>
+                        <div class="mt-2 pt-2 border-top">
+                            <strong class="text-primary">TOTAL ANNUEL :</strong>
+                            {{ number_format($classe->fraisTotalAnnuel(), 0, ',', ' ') }} FCFA
+                        </div>
                     </td>
 
                     <td>
                         <span class="badge bg-primary">
                             {{ $classe->eleves_count ?? $classe->eleves->count() }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="badge bg-success">
+                            {{ $classe->enseignants_count ?? 0 }}
                         </span>
                     </td>
 
@@ -73,7 +84,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted">
+                    <td colspan="6" class="text-center text-muted">
                         Aucune classe enregistrée.
                     </td>
                 </tr>

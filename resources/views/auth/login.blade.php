@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - Suivi Scolaire</title>
+    <title>Connexion - SchoolFlow</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -32,7 +32,7 @@
 <body>
     <div class="card">
         <div class="card-header">
-            <h4 class="mb-0">🏫 Suivi Scolaire</h4>
+            <h4 class="mb-0">🏫 SchoolFlow</h4>
             <small>Système de gestion scolaire</small>
         </div>
         <div class="card-body p-4">

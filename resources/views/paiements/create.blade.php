@@ -22,10 +22,11 @@
             {{-- Élève --}}
             <div class="mb-3">
                 <label class="form-label fw-medium">Élève <span class="text-danger">*</span></label>
-                <select name="eleve_id" class="form-select @error('eleve_id') is-invalid @enderror" required>
+                <select name="eleve_id" id="select-eleve" class="form-select @error('eleve_id') is-invalid @enderror" required>
                     <option value="">-- Choisir un élève --</option>
                     @foreach($eleves as $eleve)
                         <option value="{{ $eleve->id }}"
+                            data-frais-total="{{ $eleve->classe?->fraisTotalAnnuel() ?? 0 }}"
                             {{ old('eleve_id', request('eleve_id')) == $eleve->id ? 'selected' : '' }}>
                             {{ $eleve->nom }} {{ $eleve->prenoms }}
                             ({{ $eleve->classe->nom ?? '-' }})
@@ -65,18 +66,24 @@
                 @error('type_paiement')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
             </div>
 
+            <div id="frais-eleve-info" class="alert alert-info small py-2 mb-3" style="display:none">
+                <div><strong>Total frais classe (année) :</strong> <span id="frais-total-classe">—</span> FCFA</div>
+                <div><strong>Déjà payé cette année :</strong> <span id="frais-deja-paye">—</span> FCFA</div>
+                <div><strong>Reste à payer :</strong> <span id="frais-reste" class="fw-bold text-primary">—</span> FCFA</div>
+            </div>
+
             {{-- Montant + Trimestre --}}
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-medium">Montant (FCFA) <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text">F</span>
-                        <input type="number" name="montant"
+                        <input type="number" name="montant" id="input-montant"
                                class="form-control @error('montant') is-invalid @enderror"
                                value="{{ old('montant') }}" min="1"
-                               placeholder="Ex: 25000" required>
+                               placeholder="Max = reste à payer" required>
                     </div>
-                    @error('montant')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('montant')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-medium">Trimestre <span class="text-danger">*</span></label>
@@ -102,12 +109,18 @@
             </div>
 
             {{-- Date --}}
-            <div class="mb-4">
+            <div class="mb-3">
                 <label class="form-label fw-medium">Date de paiement <span class="text-danger">*</span></label>
                 <input type="date" name="date_paiement"
                        class="form-control @error('date_paiement') is-invalid @enderror"
                        value="{{ old('date_paiement', date('Y-m-d')) }}" required>
                 @error('date_paiement')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-medium">Observation <span class="text-muted small">(sur le reçu)</span></label>
+                <input type="text" name="observation" class="form-control"
+                       value="{{ old('observation') }}" placeholder="Ex: bien, acompte trimestre 1…">
             </div>
 
             {{-- Boutons --}}
@@ -128,4 +141,46 @@
 </div>
 </div>
 
+<script>
+const fraisParEleve = @json(
+    $eleves->mapWithKeys(fn ($e) => [
+        $e->id => [
+            'total' => (float) ($e->classe?->fraisTotalAnnuel() ?? 0),
+            'paye' => (float) \App\Models\Paiement::where('eleve_id', $e->id)
+                ->whereYear('date_paiement', now()->year)
+                ->sum('montant'),
+        ],
+    ])
+);
+
+function majFraisEleve() {
+    const id = document.getElementById('select-eleve').value;
+    const box = document.getElementById('frais-eleve-info');
+    const input = document.getElementById('input-montant');
+    if (!id || !fraisParEleve[id]) {
+        box.style.display = 'none';
+        return;
+    }
+    const total = fraisParEleve[id].total;
+    const paye = fraisParEleve[id].paye;
+    const reste = Math.max(0, total - paye);
+    document.getElementById('frais-total-classe').textContent = total.toLocaleString('fr-FR');
+    document.getElementById('frais-deja-paye').textContent = paye.toLocaleString('fr-FR');
+    document.getElementById('frais-reste').textContent = reste.toLocaleString('fr-FR');
+    input.max = reste > 0 ? reste : '';
+    box.style.display = reste > 0 ? '' : (total > 0 ? '' : 'none');
+}
+
+document.getElementById('select-eleve').addEventListener('change', majFraisEleve);
+document.getElementById('input-montant')?.addEventListener('change', function() {
+    const id = document.getElementById('select-eleve').value;
+    if (!id || !fraisParEleve[id]) return;
+    const reste = Math.max(0, fraisParEleve[id].total - fraisParEleve[id].paye);
+    if (parseFloat(this.value) > reste) {
+        alert('Le montant dépasse le reste à payer (' + reste.toLocaleString('fr-FR') + ' FCFA).');
+        this.value = reste > 0 ? reste : '';
+    }
+});
+majFraisEleve();
+</script>
 @endsection

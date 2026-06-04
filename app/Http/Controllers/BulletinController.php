@@ -15,30 +15,80 @@ class BulletinController extends Controller
         $notes = Note::with('matiere')
             ->where('eleve_id', $eleve->id)
             ->where('trimestre', $trimestre)
+            ->orderBy('created_at')
             ->get();
 
-        $totalCoef = 0;
+        $totalCoefs = 0;
         $totalPoints = 0;
 
         foreach ($notes as $note) {
             $coef = $note->matiere->coefficient ?? 1;
-
-            $totalCoef += $coef;
+            $totalCoefs += $coef;
             $totalPoints += ($note->note * $coef);
         }
 
-        $moyenne = $totalCoef > 0
-            ? round($totalPoints / $totalCoef, 2)
+        $moyenneGenerale = $totalCoefs > 0
+            ? round($totalPoints / $totalCoefs, 2)
             : 0;
 
-        $rang = 1; // à améliorer plus tard avec le classement réel
+        // Calculer le rang
+        $toutes_les_moyennes = Eleve::with(['notes' => function ($query) use ($trimestre) {
+            $query->where('trimestre', $trimestre);
+        }])->get()->map(function ($e) {
+            $totalCoef = 0;
+            $totalPoints = 0;
+            foreach ($e->notes as $note) {
+                $coef = $note->matiere->coefficient ?? 1;
+                $totalCoef += $coef;
+                $totalPoints += ($note->note * $coef);
+            }
+            return [
+                'id' => $e->id,
+                'moyenne' => $totalCoef > 0 ? round($totalPoints / $totalCoef, 2) : 0
+            ];
+        })->sortByDesc('moyenne');
 
-        return view('bulletins.show', compact(
+        $rang = 1;
+        foreach ($toutes_les_moyennes as $index => $item) {
+            if ($item['id'] == $eleve->id) {
+                $rang = $index + 1;
+                break;
+            }
+        }
+
+        $totalEleves = Eleve::where('classe_id', $eleve->classe_id)
+            ->where('statut', 'actif')
+            ->count();
+
+        // Déterminer la mention
+        $mention = $this->getMention($moyenneGenerale);
+
+        // Générer un numéro de bulletin
+        $bulletinNumero = strtoupper("BLT-{$eleve->matricule}-{$trimestre}");
+
+        $ecole = config('ecole');
+
+        return view('notes.bulletin', compact(
             'eleve',
             'notes',
             'trimestre',
-            'moyenne',
-            'rang'
+            'moyenneGenerale',
+            'rang',
+            'totalEleves',
+            'totalCoefs',
+            'totalPoints',
+            'mention',
+            'bulletinNumero',
+            'ecole'
         ));
+    }
+
+    private function getMention($moyenne)
+    {
+        if ($moyenne >= 16) return 'Excellent';
+        if ($moyenne >= 14) return 'Très bien';
+        if ($moyenne >= 12) return 'Bien';
+        if ($moyenne >= 10) return 'Assez bien';
+        return 'Insuffisant';
     }
 }

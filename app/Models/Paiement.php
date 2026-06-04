@@ -14,6 +14,7 @@ class Paiement extends Model
         'date_paiement',
         'statut',
         'recu_numero',
+        'observation',
     ];
 
     protected $casts = [

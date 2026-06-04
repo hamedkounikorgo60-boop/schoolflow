@@ -6,27 +6,40 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Modèle User
+ * Représente un utilisateur de l'application (Gestionnaire, Enseignant)
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * Les attributs qui peuvent être assignés en masse
+     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
+        'name',             // Nom complet de l'utilisateur
+        'email',            // Email (identifiant de connexion)
+        'password',         // Mot de passe (haché)
+        'role',             // Rôle (gestionnaire, enseignant, eleve)
     ];
 
+    /**
+     * Les attributs qui ne doivent pas être visibles dans les sérialisations
+     */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password',         // Ne pas retourner le mot de passe
+        'remember_token',   // Token de mémorisation
     ];
 
+    /**
+     * Convertit les attributs au bon type de données
+     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at' => 'datetime',  // Converti en DateTime
+            'password' => 'hashed',             // Le mot de passe est haché
         ];
     }
 
@@ -44,6 +57,9 @@ class User extends Authenticatable
     {
         return $this->role === 'enseignant';
     }
-}
 
-// Ajouter dans la classe User (avant le dernier })
+    public function classes()
+    {
+        return $this->belongsToMany(Classe::class, 'classe_enseignant');
+    }
+}

@@ -58,7 +58,7 @@
             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
                 <span class="fw-semibold">📋 Dernières notes saisies</span>
                 <a href="{{ route('enseignant.notes.create') }}" class="btn btn-primary btn-sm">
-                    + Saisir une note
+                    + Saisie groupée
                 </a>
             </div>
             <div class="card-body p-0">
@@ -107,41 +107,53 @@
     {{-- Matières & Actions rapides --}}
     <div class="col-md-4">
 
-    {{-- Actions rapides --}}
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white border-bottom py-3">
-        <span class="fw-semibold">⚡ Actions rapides</span>
-    </div>
-
-    <div class="card-body d-flex flex-column gap-2">
-
-        <a href="{{ route('enseignant.notes.create') }}"
-           class="btn btn-outline-primary text-start">
-            📝 Saisir une note
-        </a>
-
-        <a href="{{ route('enseignant.notes.index') }}"
-           class="btn btn-outline-secondary text-start">
-            📊 Voir les moyennes
-        </a>
-
-        <a href="{{ route('enseignant.notes.index') }}"
-           class="btn btn-outline-info text-start">
-            🏆 Classement
-        </a>
-
-        <a href="{{ route('enseignant.matieres.index') }}"
-           class="btn btn-outline-success text-start">
+        {{-- Actions rapides --}}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold">⚡ Actions rapides</span>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="{{ route('enseignant.notes.create') }}"
+                   class="btn btn-outline-primary text-start">
+                    📝 Saisie groupée par classe
+                </a>
+                <a href="{{ route('enseignant.notes.index') }}"
+                   class="btn btn-outline-secondary text-start">
+                    📊 Voir les moyennes
+                </a>
+                <a href="{{ route('enseignant.notes.index') }}"
+                   class="btn btn-outline-info text-start">
+                    🏆 Classement
+                </a>
+                <a href="{{ route('enseignant.matieres.index') }}"
+                    class="btn btn-outline-success text-start">
             📚 Gérer les matières
         </a>
+            </div>
+        </div>
 
-    </div>
-</div>
+        {{-- Classes assignées --}}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold">🏫 Mes classes</span>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @forelse($classes as $classe)
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                        <span class="small fw-medium">{{ $classe->nom }} <span class="text-muted">({{ $classe->niveau }})</span></span>
+                    </li>
+                    @empty
+                    <li class="list-group-item text-muted small px-4">Aucune classe assignée.</li>
+                    @endforelse
+                </ul>
+            </div>
+        </div>
 
         {{-- Matières --}}
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold">📚 Matières</span>
+                <span class="fw-semibold">📚 Mes matières</span>
             </div>
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
