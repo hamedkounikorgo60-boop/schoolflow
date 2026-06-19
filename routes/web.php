@@ -24,8 +24,8 @@ Route::get('/', fn() => redirect()->route('login'));
 // Affichage du formulaire de connexion
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 
-// Traitement de la connexion (POST)
-Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+// Traitement de la connexion (POST) — limité à 5 tentatives par minute
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
 
 // Déconnexion
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -43,7 +43,7 @@ Route::middleware(['auth', 'role:gestionnaire'])
     ->group(function () {
 
         // Tableau de bord du gestionnaire
-        Route::get('/dashboard', fn() => view('gestionnaire.dashboard'))
+        Route::get('/dashboard', [\App\Http\Controllers\Gestionnaire\DashboardController::class, 'index'])
             ->name('dashboard');
 
         /**

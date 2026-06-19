@@ -37,7 +37,10 @@ class EleveController extends Controller
             'statut'          => 'required|in:actif,inactif',
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'matricule', 'nom', 'prenoms', 'date_naissance', 'lieu_naissance',
+            'genre', 'classe_id', 'telephone', 'adresse', 'statut',
+        ]);
 
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')

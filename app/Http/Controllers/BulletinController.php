@@ -10,6 +10,10 @@ class BulletinController extends Controller
 {
     public function show(Eleve $eleve, $trimestre)
     {
+        if (! in_array($trimestre, ['1', '2', '3', 'trimestre1', 'trimestre2', 'trimestre3'], true)) {
+            abort(404);
+        }
+
         $eleve->load('classe');
 
         $notes = Note::with('matiere')

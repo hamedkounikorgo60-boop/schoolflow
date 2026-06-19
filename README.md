@@ -42,7 +42,7 @@ SchoolFlow est une application web de gestion scolaire développée avec Laravel
         DB_CONNECTION=mysql
         DB_DATABASE=scolaire_db
         DB_USERNAME=laravel_user
-        DB_PASSWORD=admin123
+        DB_PASSWORD=<your-secure-password>
 
 5. Lancer les migrations
 
@@ -51,7 +51,7 @@ SchoolFlow est une application web de gestion scolaire développée avec Laravel
 6. Créer un compte admin
 
         php artisan tinker
-        App\Models\User::create(['name'=>'Admin','email'=>'admin@test.com','password'=>bcrypt('password'),'role'=>'gestionnaire']);
+        App\Models\User::create(['name'=>'Admin','email'=>'admin@test.com','password'=>bcrypt('<your-secure-password>'),'role'=>'gestionnaire']);
 
 7. Démarrer le serveur
 
