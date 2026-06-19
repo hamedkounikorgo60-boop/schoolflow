@@ -54,12 +54,4 @@ class Eleve extends Model
     {
         return $this->hasMany(Paiement::class);
     }
-
-    /**
-     * Relation: Un élève a plusieurs parents
-     */
-    public function parents()
-    {
-        return $this->hasMany(\App\Models\ParentModel::class, 'eleve_id');
-    }
 }
