@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MatiereController extends Controller
 {
@@ -31,7 +32,12 @@ class MatiereController extends Controller
             'filiere'     => 'required|string|max:100',
         ]);
 
-        $matiere = Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        try {
+            $matiere = Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la création de la matière', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la création de la matière.']);
+        }
 
         $enseignant = Auth::user()->enseignant;
         if ($enseignant) {
@@ -61,7 +67,12 @@ class MatiereController extends Controller
             'filiere'     => 'required|string|max:100',
         ]);
 
-        $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        try {
+            $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la modification de la matière', ['id' => $matiere->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la modification de la matière.']);
+        }
 
         return redirect()
             ->route('enseignant.matieres.index')
@@ -79,11 +90,14 @@ class MatiereController extends Controller
 
         if ($matiere->notes()->count() === 0) {
             $matiere->delete();
+            return redirect()
+                ->route('enseignant.matieres.index')
+                ->with('success', 'Matière supprimée de votre profil et du catalogue.');
         }
 
         return redirect()
             ->route('enseignant.matieres.index')
-            ->with('success', 'Matière retirée de votre profil.');
+            ->with('success', 'Matière retirée de votre profil (conservée au catalogue car des notes y sont liées).');
     }
 
     private function authorizeMatiere(Matiere $matiere): void

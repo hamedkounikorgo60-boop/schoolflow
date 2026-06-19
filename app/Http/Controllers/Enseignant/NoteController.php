@@ -8,6 +8,7 @@ use App\Models\Classe;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class NoteController extends Controller
 {
@@ -78,7 +79,8 @@ class NoteController extends Controller
             ->where('statut', 'actif')
             ->pluck('id');
 
-        $saved = 0;
+        $saved  = 0;
+        $errors = [];
 
         foreach ($request->notes as $eleveId => $noteValue) {
             if (! $eleveIds->contains((int) $eleveId)) {
@@ -88,24 +90,42 @@ class NoteController extends Controller
                 continue;
             }
 
-            Note::updateOrCreate(
-                [
-                    'eleve_id'   => $eleveId,
-                    'matiere_id' => $request->matiere_id,
-                    'trimestre'  => $request->trimestre,
-                ],
-                [
-                    'note'          => $noteValue,
-                    'enseignant_id' => optional($enseignant)->id,
-                ]
-            );
-            $saved++;
+            try {
+                Note::updateOrCreate(
+                    [
+                        'eleve_id'   => $eleveId,
+                        'matiere_id' => $request->matiere_id,
+                        'trimestre'  => $request->trimestre,
+                    ],
+                    [
+                        'note'          => $noteValue,
+                        'enseignant_id' => optional($enseignant)->id,
+                    ]
+                );
+                $saved++;
+            } catch (\Throwable $e) {
+                Log::error('Échec de l\'enregistrement d\'une note en lot', [
+                    'eleve_id' => $eleveId,
+                    'error'    => $e->getMessage(),
+                ]);
+                $errors[] = $eleveId;
+            }
         }
 
-        if ($saved === 0) {
+        if ($saved === 0 && empty($errors)) {
             return back()
                 ->withInput()
                 ->with('error', 'Aucune note à enregistrer. Renseignez au moins une note.');
+        }
+
+        if (!empty($errors)) {
+            return redirect()
+                ->route('enseignant.notes.create', [
+                    'classe_id'  => $request->classe_id,
+                    'matiere_id' => $request->matiere_id,
+                    'trimestre'  => $request->trimestre,
+                ])
+                ->with('error', "{$saved} note(s) enregistrée(s), mais " . count($errors) . ' note(s) ont échoué.');
         }
 
         return redirect()
@@ -132,17 +152,22 @@ class NoteController extends Controller
 
         $enseignant = Auth::user()->enseignant;
 
-        Note::updateOrCreate(
-            [
-                'eleve_id'   => $request->eleve_id,
-                'matiere_id' => $request->matiere_id,
-                'trimestre'  => $request->trimestre,
-            ],
-            [
-                'note'          => $request->note,
-                'enseignant_id' => optional($enseignant)->id,
-            ]
-        );
+        try {
+            Note::updateOrCreate(
+                [
+                    'eleve_id'   => $request->eleve_id,
+                    'matiere_id' => $request->matiere_id,
+                    'trimestre'  => $request->trimestre,
+                ],
+                [
+                    'note'          => $request->note,
+                    'enseignant_id' => optional($enseignant)->id,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Échec de l\'enregistrement de la note', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de l\'enregistrement de la note.']);
+        }
 
         return redirect()->route('enseignant.dashboard')
             ->with('success', 'Note enregistrée avec succès.');
@@ -166,8 +191,10 @@ class NoteController extends Controller
                     ->where('trimestre', 'trimestre' . $trimestre)
                     ->get();
 
-                $totalCoefs     = $notes->sum(fn ($n) => $n->matiere->coefficient);
-                $totalPoints    = $notes->sum(fn ($n) => $n->note * $n->matiere->coefficient);
+                $validNotes = $notes->filter(fn ($n) => $n->matiere !== null);
+
+                $totalCoefs     = $validNotes->sum(fn ($n) => $n->matiere->coefficient);
+                $totalPoints    = $validNotes->sum(fn ($n) => $n->note * $n->matiere->coefficient);
                 $eleve->moyenne = $totalCoefs > 0 ? round($totalPoints / $totalCoefs, 2) : null;
 
                 return $eleve;

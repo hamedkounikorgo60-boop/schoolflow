@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Eleve;
 use App\Models\Classe;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class EleveController extends Controller
@@ -40,13 +41,21 @@ class EleveController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')
-                                     ->store('photos', 'public');
+            $path = $request->file('photo')->store('photos', 'public');
+            if ($path === false) {
+                return back()->withInput()->withErrors(['photo' => 'Échec du téléchargement de la photo.']);
+            }
+            $data['photo'] = $path;
         }
 
         $data['redoublant'] = $request->has('redoublant') ? 1 : 0;
 
-        Eleve::create($data);
+        try {
+            Eleve::create($data);
+        } catch (\Throwable $e) {
+            Log::error('Échec de la création de l\'élève', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de l\'inscription de l\'élève.']);
+        }
 
         return redirect()->route('gestionnaire.eleves.index')
                          ->with('success', 'Élève inscrit avec succès.');
@@ -84,14 +93,22 @@ class EleveController extends Controller
         $data['redoublant'] = $request->has('redoublant') ? 1 : 0;
 
         if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('photos', 'public');
+            if ($path === false) {
+                return back()->withInput()->withErrors(['photo' => 'Échec du téléchargement de la photo.']);
+            }
             if ($eleve->photo) {
                 Storage::disk('public')->delete($eleve->photo);
             }
-            $data['photo'] = $request->file('photo')
-                                     ->store('photos', 'public');
+            $data['photo'] = $path;
         }
 
-        $eleve->update($data);
+        try {
+            $eleve->update($data);
+        } catch (\Throwable $e) {
+            Log::error('Échec de la modification de l\'élève', ['id' => $eleve->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la modification de l\'élève.']);
+        }
 
         return redirect()->route('gestionnaire.eleves.index')
                          ->with('success', 'Élève modifié avec succès.');
@@ -99,10 +116,16 @@ class EleveController extends Controller
 
     public function destroy(Eleve $eleve)
     {
-        if ($eleve->photo) {
-            Storage::disk('public')->delete($eleve->photo);
+        try {
+            if ($eleve->photo) {
+                Storage::disk('public')->delete($eleve->photo);
+            }
+            $eleve->delete();
+        } catch (\Throwable $e) {
+            Log::error('Échec de la suppression de l\'élève', ['id' => $eleve->id, 'error' => $e->getMessage()]);
+            return redirect()->route('gestionnaire.eleves.index')
+                             ->with('error', 'Erreur lors de la suppression de l\'élève.');
         }
-        $eleve->delete();
 
         return redirect()->route('gestionnaire.eleves.index')
                          ->with('success', 'Élève supprimé avec succès.');
