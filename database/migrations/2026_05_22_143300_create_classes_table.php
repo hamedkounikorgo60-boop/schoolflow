@@ -13,14 +13,9 @@ return new class extends Migration
     {
         Schema::create('classes', function (Blueprint $table) {
             $table->id();
-            $table->string('libelle')->unique();
-$table->string('niveau');
-$table->string('filiere');
-$table->string('annee_scolaire');
-$table->unsignedBigInteger('directeur_id');
-$table->timestamps();
-
-$table->foreign('directeur_id')->references('id')->on('users')->onDelete('cascade');
+            $table->string('nom')->unique();
+            $table->string('niveau');
+            $table->timestamps();
         });
     }
 
