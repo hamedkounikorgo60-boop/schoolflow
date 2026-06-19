@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MatiereRequest;
 use App\Models\Classe;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
@@ -32,17 +33,13 @@ class MatiereController extends Controller
         return view('gestionnaire.matieres.create', compact('classe'));
     }
 
-    public function store(Request $request)
+    public function store(MatiereRequest $request)
     {
         $request->validate([
-            'nom'         => 'required|string|max:255|unique:matieres',
-            'coefficient' => 'required|integer|min:1',
-            'niveau'      => 'required|string|max:100',
-            'filiere'     => 'required|string|max:100',
-            'classe_id'   => 'nullable|exists:classes,id',
+            'classe_id' => 'nullable|exists:classes,id',
         ]);
 
-        Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        Matiere::create($request->safe()->only(['nom', 'coefficient', 'niveau', 'filiere']));
 
         $redirectParams = $request->filled('classe_id') ? ['classe_id' => $request->classe_id] : [];
 
@@ -58,17 +55,13 @@ class MatiereController extends Controller
         return view('gestionnaire.matieres.edit', compact('matiere'));
     }
 
-    public function update(Request $request, Matiere $matiere)
+    public function update(MatiereRequest $request, Matiere $matiere)
     {
         $request->validate([
-            'nom'         => 'required|string|max:255|unique:matieres,nom,' . $matiere->id,
-            'coefficient' => 'required|integer|min:1',
-            'niveau'      => 'required|string|max:100',
-            'filiere'     => 'required|string|max:100',
-            'classe_id'   => 'nullable|exists:classes,id',
+            'classe_id' => 'nullable|exists:classes,id',
         ]);
 
-        $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        $matiere->update($request->safe()->only(['nom', 'coefficient', 'niveau', 'filiere']));
 
         $redirectParams = $request->filled('classe_id') ? ['classe_id' => $request->classe_id] : [];
 

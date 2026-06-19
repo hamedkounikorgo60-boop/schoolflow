@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Eleve;
 use App\Models\Note;
+use App\Services\MoyenneService;
 use Illuminate\Http\Request;
 
 class BulletinController extends Controller
@@ -18,52 +19,16 @@ class BulletinController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $totalCoefs = 0;
-        $totalPoints = 0;
+        $totalCoefs  = $notes->sum(fn ($n) => $n->matiere->coefficient ?? 1);
+        $totalPoints = $notes->sum(fn ($n) => $n->note * ($n->matiere->coefficient ?? 1));
 
-        foreach ($notes as $note) {
-            $coef = $note->matiere->coefficient ?? 1;
-            $totalCoefs += $coef;
-            $totalPoints += ($note->note * $coef);
-        }
+        $moyenneGenerale = MoyenneService::computeFromNotes($notes) ?? 0;
+        $mention         = MoyenneService::mention($moyenneGenerale);
 
-        $moyenneGenerale = $totalCoefs > 0
-            ? round($totalPoints / $totalCoefs, 2)
-            : 0;
+        $ranking     = MoyenneService::computeRang($eleve, $trimestre);
+        $rang        = $ranking['rang'];
+        $totalEleves = $ranking['totalEleves'];
 
-        // Calculer le rang
-        $toutes_les_moyennes = Eleve::with(['notes' => function ($query) use ($trimestre) {
-            $query->where('trimestre', $trimestre);
-        }])->get()->map(function ($e) {
-            $totalCoef = 0;
-            $totalPoints = 0;
-            foreach ($e->notes as $note) {
-                $coef = $note->matiere->coefficient ?? 1;
-                $totalCoef += $coef;
-                $totalPoints += ($note->note * $coef);
-            }
-            return [
-                'id' => $e->id,
-                'moyenne' => $totalCoef > 0 ? round($totalPoints / $totalCoef, 2) : 0
-            ];
-        })->sortByDesc('moyenne');
-
-        $rang = 1;
-        foreach ($toutes_les_moyennes as $index => $item) {
-            if ($item['id'] == $eleve->id) {
-                $rang = $index + 1;
-                break;
-            }
-        }
-
-        $totalEleves = Eleve::where('classe_id', $eleve->classe_id)
-            ->where('statut', 'actif')
-            ->count();
-
-        // Déterminer la mention
-        $mention = $this->getMention($moyenneGenerale);
-
-        // Générer un numéro de bulletin
         $bulletinNumero = strtoupper("BLT-{$eleve->matricule}-{$trimestre}");
 
         $ecole = config('ecole');
@@ -81,14 +46,5 @@ class BulletinController extends Controller
             'bulletinNumero',
             'ecole'
         ));
-    }
-
-    private function getMention($moyenne)
-    {
-        if ($moyenne >= 16) return 'Excellent';
-        if ($moyenne >= 14) return 'Très bien';
-        if ($moyenne >= 12) return 'Bien';
-        if ($moyenne >= 10) return 'Assez bien';
-        return 'Insuffisant';
     }
 }

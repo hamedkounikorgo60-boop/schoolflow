@@ -5,6 +5,7 @@ use App\Models\Note;
 use App\Models\Eleve;
 use App\Models\Matiere;
 use App\Models\Classe;
+use App\Services\MoyenneService;
 use Illuminate\Http\Request;
 
 class NoteController extends Controller
@@ -14,23 +15,9 @@ class NoteController extends Controller
         $classes   = Classe::all();
         $classe_id = $request->classe_id;
         $trimestre = $request->trimestre ?? 1;
-        $eleves    = collect();
-
-        if ($classe_id) {
-            $eleves = Eleve::where('classe_id', $classe_id)
-                ->with(['notes' => function($q) use ($trimestre) {
-                    $q->where('trimestre', $trimestre)->with('matiere');
-                }])
-                ->get()
-                ->map(function($eleve) {
-                    $notes      = $eleve->notes;
-                    $somme      = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
-                    $totalCoeff = $notes->sum(fn($n) => $n->matiere->coefficient);
-                    $eleve->moyenne = $totalCoeff > 0 ? round($somme / $totalCoeff, 2) : null;
-                    return $eleve;
-                })
-                ->sortByDesc('moyenne');
-        }
+        $eleves    = $classe_id
+            ? MoyenneService::elevesWithMoyenne((int) $classe_id, $trimestre)
+            : collect();
 
         return view('notes.index', compact('classes', 'eleves', 'classe_id', 'trimestre'));
     }
@@ -73,24 +60,9 @@ class NoteController extends Controller
         $classes   = Classe::all();
         $classe_id = $request->classe_id;
         $trimestre = $request->trimestre ?? 1;
-        $eleves    = collect();
-
-        if ($classe_id) {
-            $eleves = Eleve::where('classe_id', $classe_id)
-                ->with(['notes' => function($q) use ($trimestre) {
-                    $q->where('trimestre', $trimestre)->with('matiere');
-                }])
-                ->get()
-                ->map(function($eleve) {
-                    $notes      = $eleve->notes;
-                    $somme      = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
-                    $totalCoeff = $notes->sum(fn($n) => $n->matiere->coefficient);
-                    $eleve->moyenne = $totalCoeff > 0 ? round($somme / $totalCoeff, 2) : null;
-                    return $eleve;
-                })
-                ->sortByDesc('moyenne')
-                ->values();
-        }
+        $eleves    = $classe_id
+            ? MoyenneService::elevesWithMoyenne((int) $classe_id, $trimestre)
+            : collect();
 
         return view('notes.classement', compact('classes', 'eleves', 'classe_id', 'trimestre'));
     }

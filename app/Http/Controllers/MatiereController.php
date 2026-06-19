@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MatiereRequest;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,16 +23,9 @@ class MatiereController extends Controller
         return view('matieres.create');
     }
 
-    public function store(Request $request)
+    public function store(MatiereRequest $request)
     {
-        $request->validate([
-            'nom'         => 'required|string|max:255|unique:matieres',
-            'coefficient' => 'required|integer|min:1',
-            'niveau'      => 'required|string|max:100',
-            'filiere'     => 'required|string|max:100',
-        ]);
-
-        $matiere = Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        $matiere = Matiere::create($request->validated());
 
         $enseignant = Auth::user()->enseignant;
         if ($enseignant) {
@@ -50,18 +44,11 @@ class MatiereController extends Controller
         return view('matieres.edit', compact('matiere'));
     }
 
-    public function update(Request $request, Matiere $matiere)
+    public function update(MatiereRequest $request, Matiere $matiere)
     {
         $this->authorizeMatiere($matiere);
 
-        $request->validate([
-            'nom'         => 'required|string|max:255|unique:matieres,nom,' . $matiere->id,
-            'coefficient' => 'required|integer|min:1',
-            'niveau'      => 'required|string|max:100',
-            'filiere'     => 'required|string|max:100',
-        ]);
-
-        $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        $matiere->update($request->validated());
 
         return redirect()
             ->route('enseignant.matieres.index')

@@ -15,36 +15,7 @@
     </a>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <form method="GET" class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label small text-muted mb-1">Classe</label>
-                <select name="classe_id" class="form-select form-select-sm">
-                    <option value="">-- Choisir une classe --</option>
-                    @foreach($classes as $classe)
-                        <option value="{{ $classe->id }}" {{ $classe_id == $classe->id ? 'selected' : '' }}>
-                            {{ $classe->nom }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small text-muted mb-1">Trimestre</label>
-                <select name="trimestre" class="form-select form-select-sm">
-                    @foreach([1,2,3] as $t)
-                        <option value="{{ $t }}" {{ $trimestre == $t ? 'selected' : '' }}>
-                            Trimestre {{ $t }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Afficher</button>
-            </div>
-        </form>
-    </div>
-</div>
+<x-trimestre-filter :classes="$classes" :classe-id="$classe_id" :trimestre="$trimestre" submit-label="Afficher" />
 
 @if($eleves->count() > 0)
 <div class="card border-0 shadow-sm">
@@ -60,15 +31,6 @@
             </thead>
             <tbody>
                 @foreach($eleves as $rang => $eleve)
-                @php
-                    $mention = match(true) {
-                        $eleve->moyenne >= 16 => ['label'=>'Excellent',  'class'=>'bg-success'],
-                        $eleve->moyenne >= 14 => ['label'=>'Très bien',  'class'=>'bg-primary'],
-                        $eleve->moyenne >= 12 => ['label'=>'Bien',       'class'=>'bg-info'],
-                        $eleve->moyenne >= 10 => ['label'=>'Assez bien', 'class'=>'bg-warning'],
-                        default               => ['label'=>'Insuffisant','class'=>'bg-danger'],
-                    };
-                @endphp
                 <tr>
                     <td class="px-4 py-3 fs-5">
                         @if($rang == 0) 🥇
@@ -79,11 +41,7 @@
                     </td>
                     <td class="px-4 py-3 fw-semibold">{{ $eleve->nom }} {{ $eleve->prenoms }}</td>
                     <td class="px-4 py-3 fw-bold text-primary">{{ $eleve->moyenne ?? 'N/A' }}/20</td>
-                    <td class="px-4 py-3">
-                        @if($eleve->moyenne !== null)
-                            <span class="badge {{ $mention['class'] }}">{{ $mention['label'] }}</span>
-                        @endif
-                    </td>
+                    <td class="px-4 py-3"><x-mention-badge :moyenne="$eleve->moyenne" /></td>
                 </tr>
                 @endforeach
             </tbody>
