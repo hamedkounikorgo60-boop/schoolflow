@@ -317,6 +317,11 @@
         <i class="bi bi-exclamation-triangle"></i> Impayés
     </a>
 
+    <div class="sidebar-section">Pédagogie</div>
+    <a href="{{ route('gestionnaire.notes.classement') }}"
+       class="sidebar-link {{ request()->routeIs('gestionnaire.notes.classement') ? 'active' : '' }}">
+        <i class="bi bi-trophy"></i> Classement
+    </a>
     @endif
 
     <div class="sidebar-footer">
