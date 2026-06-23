@@ -121,26 +121,6 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-4">
-        <div class="card h-100">
-            <div class="card-header" style="background:#f0f9ff;color:#0369a1">
-                <i class="bi bi-mortarboard me-2"></i>Notes & Pédagogie
-            </div>
-            <div class="card-body d-flex flex-column gap-2 p-3">
-                <a href="{{ route('gestionnaire.notes.create') }}"
-                   class="btn btn-info text-white d-flex align-items-center gap-2">
-                    <i class="bi bi-pencil-square"></i> Saisir une note
-                </a>
-                <a href="{{ route('gestionnaire.notes.index') }}"
-                   class="btn btn-outline-info d-flex align-items-center gap-2">
-                    <i class="bi bi-bar-chart"></i> Notes & Moyennes
-                </a>
-                <a href="{{ route('gestionnaire.notes.classement') }}"
-                   class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                    <i class="bi bi-trophy"></i> Classement par classe
-                </a>
-            </div>
-        </div>
-    </div>
+
 </div>
 @endsection
