@@ -317,19 +317,6 @@
         <i class="bi bi-exclamation-triangle"></i> Impayés
     </a>
 
-    <div class="sidebar-section">Pédagogie</div>
-    <a href="{{ route('gestionnaire.notes.create') }}"
-       class="sidebar-link {{ request()->routeIs('gestionnaire.notes.create') ? 'active' : '' }}">
-        <i class="bi bi-pencil-square"></i> Saisir notes
-    </a>
-    <a href="{{ route('gestionnaire.notes.index') }}"
-       class="sidebar-link {{ request()->routeIs('gestionnaire.notes.index') ? 'active' : '' }}">
-        <i class="bi bi-bar-chart"></i> Notes & Moyennes
-    </a>
-    <a href="{{ route('gestionnaire.notes.classement') }}"
-       class="sidebar-link {{ request()->routeIs('gestionnaire.notes.classement') ? 'active' : '' }}">
-        <i class="bi bi-trophy"></i> Classement
-    </a>
     @endif
 
     <div class="sidebar-footer">

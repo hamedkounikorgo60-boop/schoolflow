@@ -6,7 +6,6 @@ use App\Http\Controllers\EleveController;
 use App\Http\Controllers\ClasseController;
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\MatiereController;
-use App\Http\Controllers\Gestionnaire\NoteController;
 use App\Http\Controllers\Gestionnaire\EnseignantController as GestionnaireEnseignantController;
 use App\Http\Controllers\Gestionnaire\ParentController as GestionnaireParentController;
 use App\Http\Controllers\Gestionnaire\MatiereController as GestionnaireMatiereController;
@@ -122,20 +121,6 @@ Route::middleware(['auth', 'role:gestionnaire'])
             [PaiementController::class, 'impaye'])
             ->name('paiements.impaye');
 
-        /**
-         * ROUTES POUR LES NOTES
-         */
-        Route::resource('notes', NoteController::class);
-
-        // Affichage du classement des élèves par moyenne
-        Route::get('/classement',
-            [NoteController::class, 'classement'])
-            ->name('notes.classement');
-
-        // Génération du bulletin PDF
-        Route::get('/bulletin',
-            [NoteController::class, 'bulletin'])
-            ->name('notes.bulletin');
     });
 
 /**
