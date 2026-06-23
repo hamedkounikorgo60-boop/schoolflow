@@ -298,6 +298,10 @@
        class="sidebar-link {{ request()->routeIs('gestionnaire.enseignants.*') ? 'active' : '' }}">
         <i class="bi bi-person-workspace"></i> Enseignants
     </a>
+    <a href="{{ route('gestionnaire.parents.index') }}"
+       class="sidebar-link {{ request()->routeIs('gestionnaire.parents.*') ? 'active' : '' }}">
+        <i class="bi bi-person-hearts"></i> Parents
+    </a>
     <a href="{{ route('gestionnaire.matieres.index') }}"
        class="sidebar-link {{ request()->routeIs('gestionnaire.matieres.*') ? 'active' : '' }}">
         <i class="bi bi-book"></i> Matières
@@ -336,7 +340,7 @@
             <div>
                 <div class="sidebar-user-name">{{ Auth::user()->name }}</div>
                 <div class="sidebar-user-role">
-                    {{ Auth::user()->isGestionnaire() ? 'Gestionnaire' : 'Enseignant' }}
+                    {{ Auth::user()->isGestionnaire() ? 'Gestionnaire' : (Auth::user()->isParent() ? 'Parent' : 'Enseignant') }}
                 </div>
             </div>
         </div>

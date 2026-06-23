@@ -8,6 +8,7 @@ use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\MatiereController;
 use App\Http\Controllers\Gestionnaire\NoteController;
 use App\Http\Controllers\Gestionnaire\EnseignantController as GestionnaireEnseignantController;
+use App\Http\Controllers\Gestionnaire\ParentController as GestionnaireParentController;
 use App\Http\Controllers\Gestionnaire\MatiereController as GestionnaireMatiereController;
 use App\Http\Controllers\Enseignant\DashboardController as EnseignantDashboard;
 use App\Http\Controllers\Enseignant\NoteController as EnseignantNoteController;
@@ -76,6 +77,24 @@ Route::middleware(['auth', 'role:gestionnaire'])
             ->name('enseignants.edit');
         Route::put('/enseignants/{user}', [GestionnaireEnseignantController::class, 'update'])
             ->name('enseignants.update');
+
+        /**
+         * ROUTES POUR LES PARENTS
+         */
+        Route::get('/parents', [GestionnaireParentController::class, 'index'])
+            ->name('parents.index');
+        Route::get('/parents/create', [GestionnaireParentController::class, 'create'])
+            ->name('parents.create');
+        Route::post('/parents', [GestionnaireParentController::class, 'store'])
+            ->name('parents.store');
+        Route::get('/parents/{user}', [GestionnaireParentController::class, 'show'])
+            ->name('parents.show');
+        Route::get('/parents/{user}/edit', [GestionnaireParentController::class, 'edit'])
+            ->name('parents.edit');
+        Route::put('/parents/{user}', [GestionnaireParentController::class, 'update'])
+            ->name('parents.update');
+        Route::delete('/parents/{user}', [GestionnaireParentController::class, 'destroy'])
+            ->name('parents.destroy');
 
         /**
          * ROUTES POUR LES MATIÈRES

@@ -26,6 +26,7 @@ class Eleve extends Model
         'adresse',         // Adresse
         'email',           // Email de l'élève
         'classe_id',       // ID de la classe
+        'parent_id',       // ID du parent (user)
         'redoublant',      // Si c'est un redoublant
         'statut',          // Statut (actif/inactif)
         'photo',           // Photo de profil
@@ -37,6 +38,11 @@ class Eleve extends Model
     public function classe()
     {
         return $this->belongsTo(Classe::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_id');
     }
 
     /**
