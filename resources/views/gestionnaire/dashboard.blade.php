@@ -121,6 +121,18 @@
             </div>
         </div>
     </div>
-
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-header" style="background:#f0f9ff;color:#0369a1">
+                <i class="bi bi-trophy me-2"></i>Pédagogie
+            </div>
+            <div class="card-body d-flex flex-column gap-2 p-3">
+                <a href="{{ route('gestionnaire.notes.classement') }}"
+                   class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                    <i class="bi bi-trophy"></i> Classement par classe
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
