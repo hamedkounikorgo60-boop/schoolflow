@@ -9,6 +9,7 @@
     $nbImpayes   = \App\Models\Eleve::with(['classe','paiements'])->get()
                     ->filter(fn($e) => $e->paiements->sum('montant') < ($e->classe->frais_scolarite ?? 0))
                     ->count();
+    $nbParents   = \App\Models\User::where('role', 'parent')->count();
 @endphp
 
 <div class="row g-3 mb-4">
@@ -98,6 +99,24 @@
                     @if($nbImpayes > 0)
                         <span class="badge bg-danger ms-auto">{{ $nbImpayes }}</span>
                     @endif
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-header" style="background:#faf5ff;color:#7c3aed">
+                <i class="bi bi-person-hearts me-2"></i>Gestion des parents
+            </div>
+            <div class="card-body d-flex flex-column gap-2 p-3">
+                <a href="{{ route('gestionnaire.parents.index') }}"
+                   class="btn btn-outline-primary d-flex align-items-center gap-2">
+                    <i class="bi bi-list-ul"></i> Liste des parents
+                    <span class="badge bg-primary ms-auto">{{ $nbParents }}</span>
+                </a>
+                <a href="{{ route('gestionnaire.parents.create') }}"
+                   class="btn btn-primary d-flex align-items-center gap-2">
+                    <i class="bi bi-person-plus"></i> Ajouter un parent
                 </a>
             </div>
         </div>

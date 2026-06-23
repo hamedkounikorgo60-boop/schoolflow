@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * Modèle User
- * Représente un utilisateur de l'application (Gestionnaire, Enseignant)
+ * Représente un utilisateur de l'application (Gestionnaire, Enseignant, Parent)
  */
 class User extends Authenticatable
 {
@@ -21,7 +21,9 @@ class User extends Authenticatable
         'name',             // Nom complet de l'utilisateur
         'email',            // Email (identifiant de connexion)
         'password',         // Mot de passe (haché)
-        'role',             // Rôle (gestionnaire, enseignant, eleve)
+        'role',             // Rôle (gestionnaire, enseignant, parent)
+        'telephone',        // Téléphone
+        'adresse',          // Adresse
     ];
 
     /**
@@ -61,5 +63,15 @@ class User extends Authenticatable
     public function classes()
     {
         return $this->belongsToMany(Classe::class, 'classe_enseignant');
+    }
+
+    public function isParent(): bool
+    {
+        return $this->role === 'parent';
+    }
+
+    public function eleves()
+    {
+        return $this->hasMany(Eleve::class, 'parent_id');
     }
 }
