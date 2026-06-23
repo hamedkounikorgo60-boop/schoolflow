@@ -7,6 +7,7 @@ use App\Models\Eleve;
 use App\Models\Classe;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Contrôleur de gestion des notes
@@ -45,9 +46,11 @@ class NoteController extends Controller
                     ->where('trimestre', 'trimestre' . $trimestre)
                     ->get();
 
+                $validNotes = $notes->filter(fn($n) => $n->matiere !== null);
+
                 // Calcule le total des coefficients et des points pondérés
-                $totalCoefs      = $notes->sum(fn($n) => $n->matiere->coefficient);
-                $totalPoints     = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
+                $totalCoefs      = $validNotes->sum(fn($n) => $n->matiere->coefficient);
+                $totalPoints     = $validNotes->sum(fn($n) => $n->note * $n->matiere->coefficient);
                 
                 // Calcule la moyenne générale (points / coefficients)
                 $eleve->moyenne  = $totalCoefs > 0 ? round($totalPoints / $totalCoefs, 2) : null;
@@ -88,17 +91,22 @@ class NoteController extends Controller
             'trimestre'  => 'required|in:trimestre1,trimestre2,trimestre3', // Trimestre valide
         ]);
 
-        // Crée ou met à jour la note
-        Note::updateOrCreate(
-            [
-                'eleve_id'   => $request->eleve_id,
-                'matiere_id' => $request->matiere_id,
-                'trimestre'  => $request->trimestre,
-            ],
-            [
-                'note' => $request->note,
-            ]
-        );
+        try {
+            // Crée ou met à jour la note
+            Note::updateOrCreate(
+                [
+                    'eleve_id'   => $request->eleve_id,
+                    'matiere_id' => $request->matiere_id,
+                    'trimestre'  => $request->trimestre,
+                ],
+                [
+                    'note' => $request->note,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Échec de l\'enregistrement de la note', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de l\'enregistrement de la note.']);
+        }
 
         // Redirige avec un message de succès
         return redirect()->route('gestionnaire.notes.index')
@@ -129,8 +137,10 @@ class NoteController extends Controller
                     ->where('trimestre', 'trimestre' . $trimestre)
                     ->get();
 
-                $totalCoefs      = $notes->sum(fn($n) => $n->matiere->coefficient);
-                $totalPoints     = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
+                $validNotes = $notes->filter(fn($n) => $n->matiere !== null);
+
+                $totalCoefs      = $validNotes->sum(fn($n) => $n->matiere->coefficient);
+                $totalPoints     = $validNotes->sum(fn($n) => $n->note * $n->matiere->coefficient);
                 $eleve->moyenne  = $totalCoefs > 0 ? round($totalPoints / $totalCoefs, 2) : null;
 
                 return $eleve;
@@ -154,6 +164,11 @@ class NoteController extends Controller
 
         // Récupère l'élève avec sa classe
         $eleve     = Eleve::with('classe')->findOrFail($request->eleve_id);
+
+        if (!$eleve->classe) {
+            return back()->with('error', 'Cet élève n\'est associé à aucune classe.');
+        }
+
         $trimestre = $request->trimestre;
 
         // Convertit le numéro de trimestre en format "trimestre1", "trimestre2", etc.
@@ -172,9 +187,15 @@ class NoteController extends Controller
             return back()->with('error', 'Aucune note trouvée pour cet élève ce trimestre.');
         }
 
+        $validNotes = $notes->filter(fn($n) => $n->matiere !== null);
+
+        if ($validNotes->isEmpty()) {
+            return back()->with('error', 'Aucune note avec une matière valide trouvée pour cet élève ce trimestre.');
+        }
+
         // Calcule la moyenne générale
-        $totalPoints     = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
-        $totalCoefs      = $notes->sum(fn($n) => $n->matiere->coefficient);
+        $totalPoints     = $validNotes->sum(fn($n) => $n->note * $n->matiere->coefficient);
+        $totalCoefs      = $validNotes->sum(fn($n) => $n->matiere->coefficient);
         $moyenneGenerale = $totalCoefs > 0 ? $totalPoints / $totalCoefs : 0;
 
         // Détermine la mention en fonction de la moyenne
@@ -194,13 +215,15 @@ class NoteController extends Controller
             $ns = Note::with('matiere')
                 ->where('eleve_id', $e->id)
                 ->where('trimestre', $trimestre)->get();
-            $tc = $ns->sum(fn($n) => $n->matiere->coefficient);
-            $tp = $ns->sum(fn($n) => $n->note * $n->matiere->coefficient);
+            $validNs = $ns->filter(fn($n) => $n->matiere !== null);
+            $tc = $validNs->sum(fn($n) => $n->matiere->coefficient);
+            $tp = $validNs->sum(fn($n) => $n->note * $n->matiere->coefficient);
             return ['id' => $e->id, 'moy' => $tc > 0 ? $tp / $tc : 0];
         })->sortByDesc('moy')->values();
 
-        $rang        = $moyennes->search(fn($m) => $m['id'] === $eleve->id) + 1;
-        $totalEleves = $tousLesEleves->count();
+        $searchResult = $moyennes->search(fn($m) => $m['id'] === $eleve->id);
+        $rang         = $searchResult !== false ? $searchResult + 1 : $tousLesEleves->count();
+        $totalEleves  = $tousLesEleves->count();
 
         // Générer le numéro de bulletin
         $trimestreShort = str_replace('trimestre', '', $trimestre);
@@ -209,12 +232,20 @@ class NoteController extends Controller
         // Récupérer les infos école
         $ecole = config('ecole');
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('notes.bulletin', compact(
-            'eleve', 'notes', 'trimestre', 'moyenneGenerale',
-            'totalPoints', 'totalCoefs', 'mention', 'rang', 'totalEleves',
-            'bulletinNumero', 'ecole'
-        ))->setPaper('a4', 'portrait');
+        try {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('notes.bulletin', compact(
+                'eleve', 'notes', 'trimestre', 'moyenneGenerale',
+                'totalPoints', 'totalCoefs', 'mention', 'rang', 'totalEleves',
+                'bulletinNumero', 'ecole'
+            ))->setPaper('a4', 'portrait');
 
-        return $pdf->download("bulletin_{$eleve->matricule}_{$trimestre}.pdf");
+            return $pdf->download("bulletin_{$eleve->matricule}_{$trimestre}.pdf");
+        } catch (\Throwable $e) {
+            Log::error('Échec de la génération du bulletin PDF', [
+                'eleve_id' => $eleve->id,
+                'error'    => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Erreur lors de la génération du bulletin PDF.');
+        }
     }
 }

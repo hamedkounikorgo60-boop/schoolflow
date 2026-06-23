@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Classe;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ClasseController extends Controller
 {
@@ -26,7 +27,12 @@ class ClasseController extends Controller
             'frais_scolarite' => 'required|numeric|min:0',
         ]);
 
-        Classe::create($request->all());
+        try {
+            Classe::create($request->all());
+        } catch (\Throwable $e) {
+            Log::error('Échec de la création de la classe', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la création de la classe.']);
+        }
 
         return redirect()->route('gestionnaire.classes.index')
                          ->with('success', 'Classe créée avec succès.');
@@ -50,8 +56,13 @@ class ClasseController extends Controller
             'enseignant_ids.*'=> 'exists:users,id',
         ]);
 
-        $classe->update($request->only('nom', 'niveau', 'frais_scolarite'));
-        $classe->enseignants()->sync($request->input('enseignant_ids', []));
+        try {
+            $classe->update($request->only('nom', 'niveau', 'frais_scolarite'));
+            $classe->enseignants()->sync($request->input('enseignant_ids', []));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la modification de la classe', ['id' => $classe->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la modification de la classe.']);
+        }
 
         return redirect()->route('gestionnaire.classes.index')
                          ->with('success', 'Classe modifiée avec succès.');
@@ -64,7 +75,13 @@ class ClasseController extends Controller
                              ->with('error', 'Impossible de supprimer une classe avec des élèves.');
         }
 
-        $classe->delete();
+        try {
+            $classe->delete();
+        } catch (\Throwable $e) {
+            Log::error('Échec de la suppression de la classe', ['id' => $classe->id, 'error' => $e->getMessage()]);
+            return redirect()->route('gestionnaire.classes.index')
+                             ->with('error', 'Erreur lors de la suppression de la classe.');
+        }
 
         return redirect()->route('gestionnaire.classes.index')
                          ->with('success', 'Classe supprimée avec succès.');

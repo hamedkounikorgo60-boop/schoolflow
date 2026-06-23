@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EnseignantController extends Controller
 {
@@ -44,23 +45,28 @@ class EnseignantController extends Controller
             'matiere_ids.*'   => 'exists:matieres,id',
         ]);
 
-        DB::transaction(function () use ($request) {
-            $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => $request->password,
-                'role'     => 'enseignant',
-            ]);
+        try {
+            DB::transaction(function () use ($request) {
+                $user = User::create([
+                    'name'     => $request->name,
+                    'email'    => $request->email,
+                    'password' => $request->password,
+                    'role'     => 'enseignant',
+                ]);
 
-            $profil = Enseignant::create([
-                'user_id'    => $user->id,
-                'specialite' => $request->specialite,
-                'telephone'  => $request->telephone,
-            ]);
+                $profil = Enseignant::create([
+                    'user_id'    => $user->id,
+                    'specialite' => $request->specialite,
+                    'telephone'  => $request->telephone,
+                ]);
 
-            $user->classes()->sync($request->input('classe_ids', []));
-            $profil->matieres()->sync($request->input('matiere_ids', []));
-        });
+                $user->classes()->sync($request->input('classe_ids', []));
+                $profil->matieres()->sync($request->input('matiere_ids', []));
+            });
+        } catch (\Throwable $e) {
+            Log::error('Échec de la création de l\'enseignant', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la création de l\'enseignant.']);
+        }
 
         return redirect()
             ->route('gestionnaire.enseignants.index')
@@ -103,15 +109,20 @@ class EnseignantController extends Controller
             'matiere_ids.*' => 'exists:matieres,id',
         ]);
 
-        $user->classes()->sync($request->input('classe_ids', []));
+        try {
+            $user->classes()->sync($request->input('classe_ids', []));
 
-        $profil = $user->enseignant ?? Enseignant::create([
-            'user_id'    => $user->id,
-            'specialite' => '',
-            'telephone'  => '',
-        ]);
+            $profil = $user->enseignant ?? Enseignant::create([
+                'user_id'    => $user->id,
+                'specialite' => '',
+                'telephone'  => '',
+            ]);
 
-        $profil->matieres()->sync($request->input('matiere_ids', []));
+            $profil->matieres()->sync($request->input('matiere_ids', []));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la mise à jour de l\'enseignant', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la mise à jour des affectations.']);
+        }
 
         return redirect()
             ->route('gestionnaire.enseignants.index')

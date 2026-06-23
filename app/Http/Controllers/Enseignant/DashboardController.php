@@ -17,14 +17,20 @@ class DashboardController extends Controller
             ? $enseignant->matieres()->orderBy('nom')->get()
             : collect();
 
-        $notesCount = Note::where('enseignant_id', optional($enseignant)->id)->count();
+        $enseignantId = $enseignant ? $enseignant->id : null;
+
+        $notesCount = $enseignantId
+            ? Note::where('enseignant_id', $enseignantId)->count()
+            : 0;
         $nbClasses  = $classes->count();
 
-        $dernieresNotes = Note::with(['eleve.classe', 'matiere'])
-            ->where('enseignant_id', optional($enseignant)->id)
-            ->latest()
-            ->take(8)
-            ->get();
+        $dernieresNotes = $enseignantId
+            ? Note::with(['eleve.classe', 'matiere'])
+                ->where('enseignant_id', $enseignantId)
+                ->latest()
+                ->take(8)
+                ->get()
+            : collect();
 
         return view('enseignant.dashboard', compact(
             'user',

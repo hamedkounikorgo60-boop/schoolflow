@@ -6,6 +6,7 @@ use App\Models\Eleve;
 use App\Models\Matiere;
 use App\Models\Classe;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class NoteController extends Controller
 {
@@ -23,7 +24,7 @@ class NoteController extends Controller
                 }])
                 ->get()
                 ->map(function($eleve) {
-                    $notes      = $eleve->notes;
+                    $notes      = $eleve->notes->filter(fn($n) => $n->matiere !== null);
                     $somme      = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
                     $totalCoeff = $notes->sum(fn($n) => $n->matiere->coefficient);
                     $eleve->moyenne = $totalCoeff > 0 ? round($somme / $totalCoeff, 2) : null;
@@ -52,17 +53,22 @@ class NoteController extends Controller
             'trimestre'  => 'required|in:1,2,3',
         ]);
 
-        Note::updateOrCreate(
-            [
-                'eleve_id'   => $request->eleve_id,
-                'matiere_id' => $request->matiere_id,
-                'trimestre'  => $request->trimestre,
-            ],
-            [
-                'note'          => $request->note,
-                'enseignant_id' => null,
-            ]
-        );
+        try {
+            Note::updateOrCreate(
+                [
+                    'eleve_id'   => $request->eleve_id,
+                    'matiere_id' => $request->matiere_id,
+                    'trimestre'  => $request->trimestre,
+                ],
+                [
+                    'note'          => $request->note,
+                    'enseignant_id' => null,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Échec de l\'enregistrement de la note', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de l\'enregistrement de la note.']);
+        }
 
         return redirect()->route('gestionnaire.notes.create')
                          ->with('success', 'Note enregistrée avec succès.');
@@ -82,7 +88,7 @@ class NoteController extends Controller
                 }])
                 ->get()
                 ->map(function($eleve) {
-                    $notes      = $eleve->notes;
+                    $notes      = $eleve->notes->filter(fn($n) => $n->matiere !== null);
                     $somme      = $notes->sum(fn($n) => $n->note * $n->matiere->coefficient);
                     $totalCoeff = $notes->sum(fn($n) => $n->matiere->coefficient);
                     $eleve->moyenne = $totalCoeff > 0 ? round($somme / $totalCoeff, 2) : null;

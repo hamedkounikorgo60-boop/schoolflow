@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Classe;
 use App\Models\Matiere;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MatiereController extends Controller
 {
@@ -42,7 +43,12 @@ class MatiereController extends Controller
             'classe_id'   => 'nullable|exists:classes,id',
         ]);
 
-        Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        try {
+            Matiere::create($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la création de la matière', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la création de la matière.']);
+        }
 
         $redirectParams = $request->filled('classe_id') ? ['classe_id' => $request->classe_id] : [];
 
@@ -68,7 +74,12 @@ class MatiereController extends Controller
             'classe_id'   => 'nullable|exists:classes,id',
         ]);
 
-        $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        try {
+            $matiere->update($request->only('nom', 'coefficient', 'niveau', 'filiere'));
+        } catch (\Throwable $e) {
+            Log::error('Échec de la modification de la matière', ['id' => $matiere->id, 'error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de la modification de la matière.']);
+        }
 
         $redirectParams = $request->filled('classe_id') ? ['classe_id' => $request->classe_id] : [];
 
@@ -85,7 +96,14 @@ class MatiereController extends Controller
                 ->with('error', "Impossible de supprimer « {$matiere->nom} » ({$matiere->niveau}) : des notes y sont liées.");
         }
 
-        $matiere->delete();
+        try {
+            $matiere->delete();
+        } catch (\Throwable $e) {
+            Log::error('Échec de la suppression de la matière', ['id' => $matiere->id, 'error' => $e->getMessage()]);
+            return redirect()
+                ->route('gestionnaire.matieres.index', request()->only('classe_id'))
+                ->with('error', 'Erreur lors de la suppression de la matière.');
+        }
 
         return redirect()
             ->route('gestionnaire.matieres.index', request()->only('classe_id'))

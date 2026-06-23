@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Paiement;
 use App\Models\Eleve;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -61,6 +62,13 @@ class PaiementController extends Controller
         ]);
 
         $eleve = Eleve::with('classe')->findOrFail($request->eleve_id);
+
+        if (!$eleve->classe) {
+            return back()
+                ->withInput()
+                ->withErrors(['eleve_id' => 'Cet élève n\'est associé à aucune classe.']);
+        }
+
         $annee = \Carbon\Carbon::parse($request->date_paiement)->year;
 
         $fraisClasse = $eleve->classe->fraisTotalAnnuel();
@@ -83,17 +91,22 @@ class PaiementController extends Controller
                 ]);
         }
 
-        $paiement = Paiement::create([
-            'eleve_id'      => $request->eleve_id,
-            'montant'       => $request->montant,
-            'type_paiement' => $request->type_paiement,
-            'trimestre'     => $request->trimestre,
-            'mois'          => $request->mois,
-            'date_paiement' => $request->date_paiement,
-            'statut'        => 'paye',
-            'recu_numero'   => 'REC-' . now()->format('Ymd') . '-' . strtoupper(Str::random(12)),
-            'observation'   => $request->observation,
-        ]);
+        try {
+            $paiement = Paiement::create([
+                'eleve_id'      => $request->eleve_id,
+                'montant'       => $request->montant,
+                'type_paiement' => $request->type_paiement,
+                'trimestre'     => $request->trimestre,
+                'mois'          => $request->mois,
+                'date_paiement' => $request->date_paiement,
+                'statut'        => 'paye',
+                'recu_numero'   => 'REC-' . now()->format('Ymd') . '-' . strtoupper(Str::random(12)),
+                'observation'   => $request->observation,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Échec de l\'enregistrement du paiement', ['error' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['general' => 'Erreur lors de l\'enregistrement du paiement.']);
+        }
 
         return redirect()
             ->route('gestionnaire.paiements.recu', $paiement)
@@ -102,17 +115,32 @@ class PaiementController extends Controller
 
     public function recu(Paiement $paiement)
     {
-        return view('paiements.recu', $this->donneesRecu($paiement));
+        $donnees = $this->donneesRecu($paiement);
+        if ($donnees === null) {
+            return back()->with('error', 'Impossible de générer le reçu : données de classe manquantes.');
+        }
+        return view('paiements.recu', $donnees);
     }
 
     public function telechargerRecu(Paiement $paiement)
     {
         $donnees = $this->donneesRecu($paiement);
+        if ($donnees === null) {
+            return back()->with('error', 'Impossible de générer le reçu : données de classe manquantes.');
+        }
 
-        $pdf = Pdf::loadView('paiements.recu_pdf', $donnees)
-            ->setPaper('a4', 'portrait');
+        try {
+            $pdf = Pdf::loadView('paiements.recu_pdf', $donnees)
+                ->setPaper('a4', 'portrait');
 
-        return $pdf->download('recu-' . $paiement->recu_numero . '.pdf');
+            return $pdf->download('recu-' . $paiement->recu_numero . '.pdf');
+        } catch (\Throwable $e) {
+            Log::error('Échec de la génération du PDF de reçu', [
+                'paiement_id' => $paiement->id,
+                'error'       => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Erreur lors de la génération du PDF du reçu.');
+        }
     }
 
     public function impaye()
@@ -120,6 +148,10 @@ class PaiementController extends Controller
         $impayes = collect();
 
         foreach (Eleve::with('classe')->get() as $eleve) {
+            if (!$eleve->classe) {
+                continue;
+            }
+
             $types = [
                 'scolarite',
                 'inscription',
@@ -151,10 +183,16 @@ class PaiementController extends Controller
         return view('paiements.impaye', compact('impayes'));
     }
 
-    private function donneesRecu(Paiement $paiement): array
+    private function donneesRecu(Paiement $paiement): ?array
     {
         $paiement->load('eleve.classe');
         $eleve  = $paiement->eleve;
+
+        if (!$eleve || !$eleve->classe) {
+            Log::warning('Données manquantes pour le reçu', ['paiement_id' => $paiement->id]);
+            return null;
+        }
+
         $classe = $eleve->classe;
         $annee  = \Carbon\Carbon::parse($paiement->date_paiement)->year;
 
