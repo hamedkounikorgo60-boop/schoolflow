@@ -58,6 +58,7 @@ class PaiementController extends Controller
             'trimestre'     => 'required|in:1,2,3',
             'date_paiement' => 'required|date',
             'observation'   => 'nullable|string|max:500',
+            'mois'          => 'nullable|string|max:20',
         ]);
 
         $eleve = Eleve::with('classe')->findOrFail($request->eleve_id);

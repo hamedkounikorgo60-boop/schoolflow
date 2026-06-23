@@ -26,7 +26,7 @@ class ClasseController extends Controller
             'frais_scolarite' => 'required|numeric|min:0',
         ]);
 
-        Classe::create($request->all());
+        Classe::create($request->only(['nom', 'niveau', 'frais_scolarite']));
 
         return redirect()->route('gestionnaire.classes.index')
                          ->with('success', 'Classe créée avec succès.');
