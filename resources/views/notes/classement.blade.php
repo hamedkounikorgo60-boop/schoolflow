@@ -3,7 +3,9 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-semibold mb-0">Classement des élèves</h5>
-    <a href="{{ route('gestionnaire.notes.create') }}" class="btn btn-primary btn-sm">+ Saisir une note</a>
+    @if(auth()->user()->role === 'enseignant')
+        <a href="{{ route('enseignant.notes.create') }}" class="btn btn-primary btn-sm">+ Saisir une note</a>
+    @endif
 </div>
 <div class="card stat-card mb-3">
     <div class="card-body">
@@ -72,8 +74,8 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('gestionnaire.notes.bulletin', [
-                                'eleve_id'  => $eleve->id,
+                        <a href="{{ route('bulletin.show', [
+                                'eleve'     => $eleve->id,
                                 'trimestre' => $trimestre,
                             ]) }}"
                            class="btn btn-sm btn-outline-secondary"
