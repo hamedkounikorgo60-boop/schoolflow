@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\Eleve;
 use App\Models\Classe;
 use App\Models\Matiere;
+use App\Services\MoyenneService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -153,26 +154,9 @@ class NoteController extends Controller
         $classes   = Auth::user()->classes()->orderBy('nom')->get()->unique('id')->values();
         $classe_id = $request->get('classe_id');
         $trimestre = $request->get('trimestre', 1);
-        $eleves    = collect();
-
-        if ($classe_id && $this->ownsClasse((int) $classe_id)) {
-            $elevesClasse = Eleve::where('classe_id', $classe_id)
-                ->where('statut', 'actif')
-                ->get();
-
-            $eleves = $elevesClasse->map(function ($eleve) use ($trimestre) {
-                $notes = Note::with('matiere')
-                    ->where('eleve_id', $eleve->id)
-                    ->where('trimestre', 'trimestre' . $trimestre)
-                    ->get();
-
-                $totalCoefs     = $notes->sum(fn ($n) => $n->matiere->coefficient);
-                $totalPoints    = $notes->sum(fn ($n) => $n->note * $n->matiere->coefficient);
-                $eleve->moyenne = $totalCoefs > 0 ? round($totalPoints / $totalCoefs, 2) : null;
-
-                return $eleve;
-            })->sortByDesc('moyenne')->values();
-        }
+        $eleves    = ($classe_id && $this->ownsClasse((int) $classe_id))
+            ? MoyenneService::elevesWithMoyenne((int) $classe_id, $trimestre)
+            : collect();
 
         return view('enseignant.notes.index', compact('classes', 'classe_id', 'trimestre', 'eleves'));
     }

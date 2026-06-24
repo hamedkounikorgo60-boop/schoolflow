@@ -1,9 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EleveRequest;
 use App\Models\Eleve;
 use App\Models\Classe;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class EleveController extends Controller
@@ -20,24 +20,9 @@ class EleveController extends Controller
         return view('eleves.create', compact('classes'));
     }
 
-    public function store(Request $request)
+    public function store(EleveRequest $request)
     {
-        $request->validate([
-            'matricule'       => 'required|unique:eleves',
-            'nom'             => 'required|string|max:100',
-            'prenoms'         => 'required|string|max:100',
-            'date_naissance'  => 'required|date',
-            'lieu_naissance'  => 'required|string|max:100',
-            'genre'           => 'required|in:M,F',
-            'classe_id'       => 'required|exists:classes,id',
-            'telephone'       => 'nullable|string|max:20',
-            'adresse'         => 'nullable|string|max:255',
-            'photo'           => 'nullable|image|max:2048',
-            'redoublant'      => 'boolean',
-            'statut'          => 'required|in:actif,inactif',
-        ]);
-
-        $data = $request->all();
+        $data = $request->validated();
 
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')
@@ -64,23 +49,9 @@ class EleveController extends Controller
         return view('eleves.edit', compact('eleve', 'classes'));
     }
 
-    public function update(Request $request, Eleve $eleve)
+    public function update(EleveRequest $request, Eleve $eleve)
     {
-        $request->validate([
-            'matricule'       => 'required|unique:eleves,matricule,'.$eleve->id,
-            'nom'             => 'required|string|max:100',
-            'prenoms'         => 'required|string|max:100',
-            'date_naissance'  => 'required|date',
-            'lieu_naissance'  => 'required|string|max:100',
-            'genre'           => 'required|in:M,F',
-            'classe_id'       => 'required|exists:classes,id',
-            'telephone'       => 'nullable|string|max:20',
-            'adresse'         => 'nullable|string|max:255',
-            'photo'           => 'nullable|image|max:2048',
-            'statut'          => 'required|in:actif,inactif',
-        ]);
-
-        $data = $request->except('photo');
+        $data = $request->validated();
         $data['redoublant'] = $request->has('redoublant') ? 1 : 0;
 
         if ($request->hasFile('photo')) {
@@ -89,6 +60,8 @@ class EleveController extends Controller
             }
             $data['photo'] = $request->file('photo')
                                      ->store('photos', 'public');
+        } else {
+            unset($data['photo']);
         }
 
         $eleve->update($data);
